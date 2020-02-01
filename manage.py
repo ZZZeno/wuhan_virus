@@ -48,7 +48,7 @@ class Server(_Server):
     def scheduler_init(self, app):
         # scheduler = APScheduler()
         scheduler.init_app(app)
-        scheduler.add_job('scheduler_task', get_data, trigger='cron', minute='*/10',
+        scheduler.add_job('scheduler_task', get_data, trigger='cron', minute='*/30',
                           replace_existing=True)
         scheduler.start()
 
