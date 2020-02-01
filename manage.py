@@ -2,7 +2,7 @@ import sys
 
 from flask_script import Manager, Server as _Server
 from app import app
-from config import Config
+from config import ProdConfig, DebugConfig
 from cron import get_data
 from flask_apscheduler import APScheduler
 
@@ -24,6 +24,10 @@ class Server(_Server):
                     print("Debugging is on. DANGER: Do not allow random users to connect to this server.")
         if use_reloader is None:
             use_reloader = use_debugger
+
+        app.config.from_object(ProdConfig)
+        if use_debugger:
+            app.config.from_object(DebugConfig)
 
         if None in [ssl_crt, ssl_key]:
             ssl_context = None
