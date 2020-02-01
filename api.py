@@ -11,7 +11,7 @@ from common import get_page, wrap_response
 wuhan = Blueprint(
     'wuhan',
     __name__,
-    url_prefix=''
+    url_prefix='/wuhan'
 )
 
 
