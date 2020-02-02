@@ -7,6 +7,7 @@ import re
 import datetime
 import json
 from common import get_page, wrap_response
+import matplotlib.pyplot as plt
 
 wuhan = Blueprint(
     'wuhan',
@@ -51,6 +52,23 @@ def index():
     db.session.commit()
 
     return wrap_response("success")
+
+
+@wuhan.route('/plot')
+def plot():
+    total_view = TotalView.query.filter().all()
+    sum_vals = [x.sure + x.suspicion for x in total_view]
+    confirmed_vals = [x.sure for x in total_view]
+    suspicion_vals = [x.suspicion for x in total_view]
+
+    dates = [x.added_time for x in total_view]
+
+    return wrap_response(0,msg={
+                            'sum_vals': sum_vals,
+                            'confirmed_vals': confirmed_vals,
+                            'suspicion_vals': suspicion_vals,
+                            "dates": dates
+    })
 
 
 @wuhan.route('/test')
