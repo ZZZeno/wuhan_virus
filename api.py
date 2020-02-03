@@ -7,7 +7,6 @@ import re
 import datetime
 import json
 from common import get_page, wrap_response
-import matplotlib.pyplot as plt
 
 wuhan = Blueprint(
     'wuhan',
@@ -25,10 +24,10 @@ def index():
     area_stat = soup.find(id='getAreaStat')
     total_stat = soup.find(id='getStatisticsService')
 
-    area_data = area_stat.text.split('=')[-1].split('}catch')[0]
+    area_data = area_stat.text.split('getAreaStat =')[-1].split('}catch')[0]
     area_result = json.loads(area_data)
 
-    overview_data = total_stat.text.split('=')[-1].split('}catch')[0]
+    overview_data = total_stat.text.split('getStatisticsService =')[-1].split('}catch')[0]
     overview_result = json.loads(overview_data)
 
     confirmed_cnt = overview_result.get('confirmedCount')
