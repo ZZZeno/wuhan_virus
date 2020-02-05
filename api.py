@@ -59,6 +59,8 @@ def plot():
     sum_vals = [x.sure + x.suspicion for x in total_view]
     confirmed_vals = [x.sure for x in total_view]
     suspicion_vals = [x.suspicion for x in total_view]
+    dead_vals = [x.cured for x in total_view]
+    cured_vals = [x.dead for x in total_view]
 
     dates = [x.added_time for x in total_view]
 
@@ -66,6 +68,8 @@ def plot():
                             'sum_vals': sum_vals,
                             'confirmed_vals': confirmed_vals,
                             'suspicion_vals': suspicion_vals,
+                            'cured_vals': cured_vals,
+                            'dead_vals': dead_vals,
                             "dates": dates
     })
 
