@@ -7,6 +7,7 @@ import re
 import datetime
 import json
 from common import get_page, wrap_response
+from sqlalchemy import func
 
 wuhan = Blueprint(
     'wuhan',
@@ -74,6 +75,34 @@ def plot():
     })
 
 
-@wuhan.route('/test')
-def test():
-    return 'aaa'
+@wuhan.route('/prov_plot')
+def prov_plot():
+    prov_view = db.session.query(ProvView.added_time,
+                               func.sum(ProvView.cured).label('cured'),
+                               func.sum(ProvView.dead).label('dead'),
+                               func.sum(ProvView.for_sure).label('sure'))\
+        .filter(ProvView.prov != "湖北")\
+        .group_by(ProvView.added_time).all()
+    sum_vals = [int(x.sure) for x in prov_view]
+    confirmed_vals = [int(x.sure) for x in prov_view]
+    # suspicion_vals = [x.suspicion for x in prov_view]
+    dead_vals = [int(x.cured) for x in prov_view]
+    cured_vals = [int(x.dead) for x in prov_view]
+
+    dates = [x.added_time for x in prov_view]
+    print({
+        'sum_vals': sum_vals,
+        'confirmed_vals': confirmed_vals,
+        # 'suspicion_vals': suspicion_vals,
+        'cured_vals': cured_vals,
+        'dead_vals': dead_vals,
+        "dates": dates
+    })
+    return wrap_response(0, msg={
+        'sum_vals': sum_vals,
+        'confirmed_vals': confirmed_vals,
+        # 'suspicion_vals': suspicion_vals,
+        'cured_vals': cured_vals,
+        'dead_vals': dead_vals,
+        "dates": dates
+    })
