@@ -36,7 +36,7 @@ def index():
     tz = pytz.timezone('Asia/Shanghai')
     tm = datetime.now(tz=tz).strftime("%Y-%m-%d %H:%M:%S")
 
-    total_view = TotalView(tm, confirmed_cnt, suspected_cnt, cured_cnt, dead_cnt)
+    total_view = TotalView(tm, confirmed_cnt, suspected_cnt, dead_cnt, cured_cnt)
     db.session.add(total_view)
     db.session.commit()
 
