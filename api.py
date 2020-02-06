@@ -1,6 +1,7 @@
 from flask import Flask, Blueprint
 import requests
 from requests import Timeout
+from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from models import ProvView, TotalView, db
 import re
@@ -57,7 +58,7 @@ def index():
 @wuhan.route('/plot')
 def plot():
     total_view = TotalView.query.filter().all()
-    sum_vals = [x.sure + x.suspicion for x in total_view]
+    total = [x.sure + x.suspicion for x in total_view]
     confirmed_vals = [x.sure for x in total_view]
     suspicion_vals = [x.suspicion for x in total_view]
     dead_vals = [x.cured for x in total_view]
@@ -65,8 +66,8 @@ def plot():
 
     dates = [x.added_time for x in total_view]
 
-    return wrap_response(0,msg={
-                            'sum_vals': sum_vals,
+    return wrap_response(0, msg={
+                            'total': total,
                             'confirmed_vals': confirmed_vals,
                             'suspicion_vals': suspicion_vals,
                             'cured_vals': cured_vals,
@@ -83,15 +84,15 @@ def prov_plot():
                                func.sum(ProvView.for_sure).label('sure'))\
         .filter(ProvView.prov != "湖北")\
         .group_by(ProvView.added_time).all()
-    sum_vals = [int(x.sure) for x in prov_view]
+    total = [int(x.sure) for x in prov_view]
     confirmed_vals = [int(x.sure) for x in prov_view]
     # suspicion_vals = [x.suspicion for x in prov_view]
-    dead_vals = [int(x.cured) for x in prov_view]
-    cured_vals = [int(x.dead) for x in prov_view]
+    cured_vals = [int(x.cured) for x in prov_view]
+    dead_vals = [int(x.dead) for x in prov_view]
 
     dates = [x.added_time for x in prov_view]
     print({
-        'sum_vals': sum_vals,
+        'total': total,
         'confirmed_vals': confirmed_vals,
         # 'suspicion_vals': suspicion_vals,
         'cured_vals': cured_vals,
@@ -99,10 +100,26 @@ def prov_plot():
         "dates": dates
     })
     return wrap_response(0, msg={
-        'sum_vals': sum_vals,
+        'total': total,
         'confirmed_vals': confirmed_vals,
         # 'suspicion_vals': suspicion_vals,
         'cured_vals': cured_vals,
         'dead_vals': dead_vals,
         "dates": dates
     })
+
+
+@wuhan.route('/change_time_zone')
+def change_time_zone():
+    total_view = TotalView.query.filter().all()
+    for item in total_view:
+        utc8 = datetime.strptime(item.added_time, '%Y-%m-%d %H:%M:%S') + timedelta(hours=8)
+        item.added_time = utc8
+    db.session.commit()
+
+    prov_view = ProvView.query.filter().all()
+    for item in prov_view:
+        utc8 = datetime.strptime(item.added_time, '%Y-%m-%d %H:%M:%S') + timedelta(hours=8)
+        item.added_time = utc8
+    db.session.commit()
+    return wrap_response(0, 'done')
