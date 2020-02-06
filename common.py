@@ -1,6 +1,6 @@
 import requests
 import json
-
+import matplotlib.pyplot as plt
 
 def get_page(retries=3) -> requests.get:
     while retries > 0:
@@ -13,9 +13,11 @@ def get_page(retries=3) -> requests.get:
             return None
 
 
-def wrap_response(status, msg=""):
+def wrap_response(status, msg="", data=""):
     if status == "fail":
         code = 1
     else:
         code = 0
-    return json.dumps({"code": code, "message": msg})
+    return json.dumps({"code": code, "message": msg, "data": data})
+
+# main()
