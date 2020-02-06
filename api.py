@@ -1,12 +1,10 @@
-from flask import Flask, Blueprint
-import requests
-from requests import Timeout
-from datetime import datetime, timedelta
+from flask import Blueprint, request
+from datetime import datetime
 from bs4 import BeautifulSoup
 from models import ProvView, TotalView, db
 import json
 from common import get_page, wrap_response
-from sqlalchemy import func
+from sqlalchemy import func, and_, or_
 import pytz
 
 wuhan = Blueprint(
@@ -60,8 +58,8 @@ def plot():
     total = [x.sure + x.suspicion for x in total_view]
     confirmed_vals = [x.sure for x in total_view]
     suspicion_vals = [x.suspicion for x in total_view]
-    dead_vals = [x.cured for x in total_view]
-    cured_vals = [x.dead for x in total_view]
+    cured_vals = [x.cured for x in total_view]
+    dead_vals = [x.dead for x in total_view]
 
     dates = [x.added_time for x in total_view]
 
@@ -107,3 +105,59 @@ def prov_plot():
         "dates": dates
     })
 
+
+@wuhan.route('/data', methods=['GET'])
+def get_data_by_params():
+    view = request.args.get('view')
+    time_from = request.args.get('from', '2020-01-01')
+    time_to = request.args.get('to', datetime.now().strftime('%Y-%m-%d')) + 'z'
+    data = {}
+    if view == 'hubei':
+        view_data = db.session.query(ProvView.added_time,
+                                     func.sum(ProvView.cured).label('cured'),
+                                     func.sum(ProvView.dead).label('dead'),
+                                     func.sum(ProvView.for_sure).label('confirmed')) \
+            .filter(ProvView.prov == "湖北") \
+            .filter(or_(ProvView.added_time.like('%10:0%'), ProvView.added_time.like('%22:0%'))) \
+            .filter(and_(ProvView.added_time >= time_from, ProvView.added_time <= time_to)) \
+            .group_by(ProvView.added_time).all()
+    elif view == 'except':
+        view_data = db.session.query(ProvView.added_time,
+                                     func.sum(ProvView.cured).label('cured'),
+                                     func.sum(ProvView.dead).label('dead'),
+                                     func.sum(ProvView.for_sure).label('confirmed')) \
+            .filter(ProvView.prov != "湖北") \
+            .filter(or_(ProvView.added_time.like('%10:0%'), ProvView.added_time.like('%22:0%'))) \
+            .filter(and_(ProvView.added_time >= time_from, ProvView.added_time <= time_to)) \
+            .group_by(ProvView.added_time).all()
+    else:
+        view_data = db.session.query(TotalView.added_time,
+                                     func.sum(TotalView.cured).label('cured'),
+                                     func.sum(TotalView.dead).label('dead'),
+                                     func.sum(TotalView.suspicion).label('suspicion'),
+                                     func.sum(TotalView.sure).label('confirmed')) \
+            .filter(or_(TotalView.added_time.like('%10:0%'), TotalView.added_time.like('%22:0%'))) \
+            .filter(and_(TotalView.added_time >= time_from, TotalView.added_time <= time_to)) \
+            .group_by(TotalView.added_time).all()
+
+    for item in view_data:
+        tm = item.added_time
+        tm_key = datetime.strptime(tm, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M')
+        try:
+            suspicion = int(item.suspicion)
+        except:
+            suspicion = 0
+        confirmed = int(item.confirmed)
+        cured = int(item.cured)
+        dead = int(item.dead)
+
+        point = {
+                'total': confirmed + suspicion,
+                'confirmed': confirmed,
+                'cured': cured,
+                'dead': dead
+            }
+        if view not in ('hubei', 'except'):
+            point.update({'suspicion': suspicion})
+        data.update({tm_key: point})
+    return wrap_response(0, msg=view, data=data)

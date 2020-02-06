@@ -19,7 +19,6 @@ class ProvView(db.Model):
         self.cured = cured
         self.dead = dead
 
-
 class TotalView(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     added_time = db.Column(db.String(64))
