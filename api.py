@@ -111,7 +111,7 @@ def get_data_by_params():
     view = request.args.get('view')
     time_from = request.args.get('from', '2020-01-01')
     time_to = request.args.get('to', datetime.now().strftime('%Y-%m-%d')) + 'z'
-    data = {}
+    data = []
     if view == 'hubei':
         view_data = db.session.query(ProvView.added_time,
                                      func.sum(ProvView.cured).label('cured'),
@@ -155,9 +155,10 @@ def get_data_by_params():
                 'total': confirmed + suspicion,
                 'confirmed': confirmed,
                 'cured': cured,
-                'dead': dead
+                'dead': dead,
+                'date': tm_key
             }
         if view not in ('hubei', 'except'):
             point.update({'suspicion': suspicion})
-        data.update({tm_key: point})
+        data.append(point)
     return wrap_response(0, msg=view, data=data)
