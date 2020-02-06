@@ -114,12 +114,12 @@ def change_time_zone():
     total_view = TotalView.query.filter().all()
     for item in total_view:
         utc8 = datetime.strptime(item.added_time, '%Y-%m-%d %H:%M:%S') + timedelta(hours=8)
-        item.added_time = utc8
+        item.added_time = utc8.strftime('%Y-%m-%d %H:%M:%S')
     db.session.commit()
 
     prov_view = ProvView.query.filter().all()
     for item in prov_view:
         utc8 = datetime.strptime(item.added_time, '%Y-%m-%d %H:%M:%S') + timedelta(hours=8)
-        item.added_time = utc8
+        item.added_time = utc8.strftime('%Y-%m-%d %H:%M:%S')
     db.session.commit()
     return wrap_response(0, 'done')
