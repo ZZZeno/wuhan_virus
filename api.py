@@ -7,6 +7,7 @@ from models import ProvView, TotalView, db
 import json
 from common import get_page, wrap_response
 from sqlalchemy import func
+import pytz
 
 wuhan = Blueprint(
     'wuhan',
@@ -34,8 +35,8 @@ def index():
     suspected_cnt = overview_result.get('suspectedCount')
     cured_cnt = overview_result.get('curedCount')
     dead_cnt = overview_result.get('deadCount')
-
-    tm = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    tz = pytz.timezone('Asia/Shanghai')
+    tm = datetime.now(tz=tz).strftime("%Y-%m-%d %H:%M:%S")
 
     total_view = TotalView(tm, confirmed_cnt, suspected_cnt, cured_cnt, dead_cnt)
     db.session.add(total_view)
@@ -106,18 +107,3 @@ def prov_plot():
         "dates": dates
     })
 
-
-@wuhan.route('/change_time_zone')
-def change_time_zone():
-    total_view = TotalView.query.filter().all()
-    for item in total_view:
-        utc8 = datetime.strptime(item.added_time, '%Y-%m-%d %H:%M:%S') + timedelta(hours=8)
-        item.added_time = utc8.strftime('%Y-%m-%d %H:%M:%S')
-    db.session.commit()
-
-    prov_view = ProvView.query.filter().all()
-    for item in prov_view:
-        utc8 = datetime.strptime(item.added_time, '%Y-%m-%d %H:%M:%S') + timedelta(hours=8)
-        item.added_time = utc8.strftime('%Y-%m-%d %H:%M:%S')
-    db.session.commit()
-    return wrap_response(0, 'done')
