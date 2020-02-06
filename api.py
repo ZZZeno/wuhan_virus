@@ -4,8 +4,6 @@ from requests import Timeout
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from models import ProvView, TotalView, db
-import re
-import datetime
 import json
 from common import get_page, wrap_response
 from sqlalchemy import func
@@ -37,7 +35,7 @@ def index():
     cured_cnt = overview_result.get('curedCount')
     dead_cnt = overview_result.get('deadCount')
 
-    tm = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    tm = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     total_view = TotalView(tm, confirmed_cnt, suspected_cnt, cured_cnt, dead_cnt)
     db.session.add(total_view)
