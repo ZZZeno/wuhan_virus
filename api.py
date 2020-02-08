@@ -160,8 +160,8 @@ def get_data_by_params():
                                      func.sum(TotalView.dead).label('dead'),
                                      func.sum(TotalView.suspicion).label('suspicion'),
                                      func.sum(TotalView.sure).label('confirmed')) \
-            .filter(ProvView.added_time.like(f'%{hour}%')) \
-            .group_by(ProvView.added_time).all()[-1]
+            .filter(TotalView.added_time.like(f'%{hour}%')) \
+            .group_by(TotalView.added_time).all()[-1]
 
     for item in view_data:
         tm = item.added_time
