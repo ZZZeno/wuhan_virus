@@ -112,6 +112,7 @@ def get_data_by_params():
     time_from = request.args.get('from', '2020-01-01')
     time_to = request.args.get('to', datetime.now().strftime('%Y-%m-%d')) + 'z'
     data = []
+    hour = db.session.query(ProvView.added_time).order_by(ProvView.id.desc()).first().added_time[-8:-4]
     if view == 'hubei':
         view_data = db.session.query(ProvView.added_time,
                                      func.sum(ProvView.cured).label('cured'),
@@ -121,6 +122,14 @@ def get_data_by_params():
             .filter(or_(ProvView.added_time.like('%10:0%'), ProvView.added_time.like('%22:0%'))) \
             .filter(and_(ProvView.added_time >= time_from, ProvView.added_time <= time_to)) \
             .group_by(ProvView.added_time).all()
+
+        last_data = db.session.query(ProvView.added_time,
+                                     func.sum(ProvView.cured).label('cured'),
+                                     func.sum(ProvView.dead).label('dead'),
+                                     func.sum(ProvView.for_sure).label('confirmed')) \
+            .filter(ProvView.prov == "湖北") \
+            .filter(ProvView.added_time.like(f'%{hour}%')) \
+            .group_by(ProvView.added_time).all()[-1]
     elif view == 'except':
         view_data = db.session.query(ProvView.added_time,
                                      func.sum(ProvView.cured).label('cured'),
@@ -130,6 +139,13 @@ def get_data_by_params():
             .filter(or_(ProvView.added_time.like('%10:0%'), ProvView.added_time.like('%22:0%'))) \
             .filter(and_(ProvView.added_time >= time_from, ProvView.added_time <= time_to)) \
             .group_by(ProvView.added_time).all()
+        last_data = db.session.query(ProvView.added_time,
+                                     func.sum(ProvView.cured).label('cured'),
+                                     func.sum(ProvView.dead).label('dead'),
+                                     func.sum(ProvView.for_sure).label('confirmed')) \
+            .filter(ProvView.prov != "湖北") \
+            .filter(ProvView.added_time.like(f'%{hour}%')) \
+            .group_by(ProvView.added_time).all()[-1]
     else:
         view_data = db.session.query(TotalView.added_time,
                                      func.sum(TotalView.cured).label('cured'),
@@ -139,6 +155,13 @@ def get_data_by_params():
             .filter(or_(TotalView.added_time.like('%10:0%'), TotalView.added_time.like('%22:0%'))) \
             .filter(and_(TotalView.added_time >= time_from, TotalView.added_time <= time_to)) \
             .group_by(TotalView.added_time).all()
+        last_data = db.session.query(TotalView.added_time,
+                                     func.sum(TotalView.cured).label('cured'),
+                                     func.sum(TotalView.dead).label('dead'),
+                                     func.sum(TotalView.suspicion).label('suspicion'),
+                                     func.sum(TotalView.sure).label('confirmed')) \
+            .filter(ProvView.added_time.like(f'%{hour}%')) \
+            .group_by(ProvView.added_time).all()[-1]
 
     for item in view_data:
         tm = item.added_time
@@ -161,4 +184,27 @@ def get_data_by_params():
         if view not in ('hubei', 'except'):
             point.update({'suspicion': suspicion})
         data.append(point)
+
+    if hour not in ('10:0', '22:0'):
+        tm = last_data.added_time
+        tm_key = datetime.strptime(tm, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M')
+        try:
+            suspicion = int(last_data.suspicion)
+        except:
+            suspicion = 0
+        confirmed = int(last_data.confirmed)
+        cured = int(last_data.cured)
+        dead = int(last_data.dead)
+
+        point = {
+            'total': confirmed + suspicion,
+            'confirmed': confirmed,
+            'cured': cured,
+            'dead': dead,
+            'date': tm_key
+        }
+        if view not in ('hubei', 'except'):
+            point.update({'suspicion': suspicion})
+        data.append(point)
+
     return wrap_response(0, msg=view, data=data)
