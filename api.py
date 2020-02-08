@@ -112,7 +112,7 @@ def get_data_by_params():
     time_from = request.args.get('from', '2020-01-01')
     time_to = request.args.get('to', datetime.now().strftime('%Y-%m-%d')) + 'z'
     data = []
-    hour = db.session.query(ProvView.added_time).order_by(ProvView.id.desc()).first().added_time[-8:-4]
+    hour = db.session.query(ProvView.added_time).order_by(ProvView.id.desc()).first().added_time
     if view == 'hubei':
         view_data = db.session.query(ProvView.added_time,
                                      func.sum(ProvView.cured).label('cured'),
